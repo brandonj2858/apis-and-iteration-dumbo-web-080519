@@ -2,24 +2,42 @@ require 'rest-client'
 require 'json'
 require 'pry'
 
-def get_character_movies_from_api(character_name)
-  #make the web request
-  response_string = RestClient.get('http://www.swapi.co/api/people/')
-  response_hash = JSON.parse(response_string)
-
-  # iterate over the response hash to find the collection of `films` for the given
-  #   `character`
-  # collect those film API urls, make a web request to each URL to get the info
-  #  for that film
-  # return value of this method should be collection of info about each film.
-  #  i.e. an array of hashes in which each hash reps a given film
-  # this collection will be the argument given to `print_movies`
-  #  and that method will do some nice presentation stuff like puts out a list
-  #  of movies by title. Have a play around with the puts with other info about a given film.
+def get_character_hash(character_name, response_hash)
+  character_hash = response_hash["results"].find do |character_info| 
+      if character_info["name"] == character_name
+        return character_info
+      end
+  end
 end
 
-def print_movies(films)
+#returns an Array of films
+def get_character_films_array(character_name, response_hash)
+  get_character_hash(character_name, response_hash)["films"]
+end
+
+
+#returns the json hash
+def get_character_movies_from_api(character_name)
+  response_string = RestClient.get("http://www.swapi.co/api/people/")
+  response_hash = JSON.parse(response_string)
+end
+
+
+
+def request_movie_hash(film_array)
   # some iteration magic and puts out the movies in a nice list
+  film_array.map do |film|
+    r_string = RestClient.get(film)
+    r_hash = JSON.parse(r_string)
+    r_hash["title"]
+  end
+  
+end
+
+def print_movie_titles(movie_title_array)
+  movie_title_array.each_with_index { |title, index|
+    puts "#{index + 1}. #{title}"
+  }
 end
 
 def show_character_movies(character)
@@ -27,6 +45,13 @@ def show_character_movies(character)
   print_movies(films)
 end
 
+
+name = "Luke Skywalker"
+response_hash = get_character_movies_from_api(name)
+film_array = get_character_films_array(name, response_hash)
+title_array = request_movie_hash(film_array)
+print_movie_titles(title_array)
+binding.pry
 ## BONUS
 
 # that `get_character_movies_from_api` method is probably pretty long. Does it do more than one job?
